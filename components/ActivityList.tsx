@@ -2,14 +2,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
-
-interface Activity {
-	id: string;
-	taskId: string;
-	taskName: string;
-	timeSpent: string;
-	date: Date;
-}
+import { Activity } from '../types';
 
 interface ActivityListProps {
 	activities: Activity[];
@@ -33,6 +26,9 @@ const ActivityList: React.FC<ActivityListProps> = ({ activities }) => {
 					minute: '2-digit',
 				})}
 			</Text>
+			{!item.isSynced && (
+				<Text style={styles.unsynced}>Not Synced</Text>
+			)}
 		</View>
 	);
 
@@ -85,6 +81,12 @@ const styles = StyleSheet.create({
 	activityDate: {
 		fontSize: 14,
 		color: '#666',
+	},
+	unsynced: {
+		fontSize: 12,
+		color: '#dc3545',
+		fontStyle: 'italic',
+		marginTop: 5,
 	},
 	emptyMessage: {
 		fontSize: 16,

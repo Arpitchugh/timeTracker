@@ -1,33 +1,17 @@
 // TimelineScreen.tsx (Updated)
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import TimeTracker from './TimeTracker';
 import ActivityList from './ActivityList';
-import TaskSelector from './TaskSelector'; // Import the TaskSelector
-
-// ... (interfaces and selectedProject remain the same)
-
-// Define interfaces for Project and Task
-interface Task {
-	id: string;
-	name: string;
-	selected: boolean;
-}
-
-interface Project {
-	id: string;
-	name: string;
-	tasks: Task[];
-}
-
-interface Activity {
-	id: string;
-	taskId: string;
-	taskName: string;
-	timeSpent: string;
-	date: Date;
-}
+import TaskSelector from './TaskSelector';
+import { Project, Task, Activity } from '../types';
+import {
+	saveActivityLocally,
+	loadActivities,
+	syncActivities,
+} from '../dataHandler';
+import NetInfo from '@react-native-community/netinfo'; // Import NetInfo
 
 const selectedProject: Project = {
 	id: 'project-1',
@@ -45,8 +29,44 @@ const TimelineScreen: React.FC = () => {
 	const [currentTask, setCurrentTask] = useState<Task | null>(
 		project.tasks.find(task => task.selected) || null
 	);
+	const [isConnected, setIsConnected] = useState<boolean>(true);
 
-	const handleTimerStop = (taskId: string, elapsedTime: string) => {
+	// Load activities from local storage when the component mounts
+	useEffect(() => {
+		const fetchActivities = async () => {
+			const storedActivities = await loadActivities();
+			setActivities(storedActivities);
+		};
+		fetchActivities();
+	}, []);
+
+	// Listen for network status changes
+	useEffect(() => {
+		const unsubscribe = NetInfo.addEventListener(state => {
+			setIsConnected(state.isConnected ?? false);
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	}, []);
+
+	// Sync activities to backend when the network becomes available
+	useEffect(() => {
+		const synchronize = async () => {
+			if (isConnected) {
+				await syncActivities(activities);
+				Alert.alert(
+					'Sync Complete',
+					'All activities have been synced.'
+				);
+			}
+		};
+		synchronize();
+	}, [isConnected, activities]);
+
+	// Handler to add a new completed activity when the timer stops
+	const handleTimerStop = async (taskId: string, elapsedTime: string) => {
 		const task = project.tasks.find(t => t.id === taskId);
 		if (task) {
 			const newActivity: Activity = {
@@ -55,8 +75,33 @@ const TimelineScreen: React.FC = () => {
 				taskName: task.name,
 				timeSpent: elapsedTime,
 				date: new Date(),
+				isSynced: false, // Initially not synced
 			};
-			setActivities(prev => [newActivity, ...prev]);
+			const updatedActivities = [newActivity, ...activities];
+			setActivities(updatedActivities);
+
+			// Save the new activity locally
+			await saveActivityLocally(newActivity);
+
+			if (isConnected) {
+				try {
+					await syncActivities(updatedActivities);
+					Alert.alert(
+						'Timer Stopped',
+						`Logged ${elapsedTime} for ${task.name} and synced.`
+					);
+				} catch (error) {
+					Alert.alert(
+						'Timer Stopped',
+						`Logged ${elapsedTime} for ${task.name}. Failed to sync.`
+					);
+				}
+			} else {
+				Alert.alert(
+					'Timer Stopped',
+					`Logged ${elapsedTime} for ${task.name}. Will sync when online.`
+				);
+			}
 		}
 	};
 
@@ -69,7 +114,7 @@ const TimelineScreen: React.FC = () => {
 		const selected =
 			updatedTasks.find(task => task.selected) || null;
 		setCurrentTask(selected);
-		// Optionally, update the project state if it's managed globally
+		// If managing project state globally, update the project state here
 	};
 
 	return (
@@ -97,8 +142,6 @@ const TimelineScreen: React.FC = () => {
 		</ScrollView>
 	);
 };
-
-// ... (styles remain the same)
 
 const styles = StyleSheet.create({
 	container: {
