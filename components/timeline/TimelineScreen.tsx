@@ -31,8 +31,16 @@ const initialProject: Project = {
 	id: 'project-1',
 	name: 'ui/ux',
 	tasks: [
-		{ id: 'task-1', name: 'Landing Page', selected: true },
-		{ id: 'task-2', name: 'User Flow', selected: false },
+		{
+			id: 'task-1', name: 'Landing Page', selected: true,
+			color: '',
+			subTaskName: ''
+		},
+		{
+			id: 'task-2', name: 'User Flow', selected: false,
+			color: '',
+			subTaskName: ''
+		},
 		// Add more tasks as needed
 	],
 };
@@ -262,6 +270,8 @@ const TimelineScreen: React.FC = () => {
 			id: `task-${Date.now()}`,
 			name: newTaskName.trim(),
 			selected: false,
+			color: '#000',
+			subTaskName: '',
 		};
 
 		await addTaskToProject(selectedProject.id, newTask);
@@ -537,9 +547,9 @@ const styles = StyleSheet.create({
 		backgroundColor: '#fff',
 	},
 	scrollContainer: {
-		paddingTop: 60,
+		paddingTop: 20,
 		paddingHorizontal: 20,
-		paddingBottom: 100, // Extra padding to accommodate the add task button
+		paddingBottom: 100,
 	},
 	addButton: {
 		position: 'absolute',
@@ -554,22 +564,22 @@ const styles = StyleSheet.create({
 		zIndex: 10,
 	},
 	title: {
-		fontSize: 28,
+		fontSize: 36,
 		fontWeight: 'bold',
-		marginBottom: 5,
-		color: '#333',
+		marginBottom: 10,
+		color: '#000',
 	},
 	subtitle: {
-		fontSize: 18,
-		color: '#666',
+		fontSize: 24,
+		color: '#000',
 		marginBottom: 20,
 	},
 	sectionTitle: {
-		fontSize: 24,
+		fontSize: 28,
 		fontWeight: '500',
 		marginTop: 20,
 		marginBottom: 15,
-		color: '#333',
+		color: '#000',
 	},
 	modalOverlay: {
 		flex: 1,
@@ -648,6 +658,56 @@ const styles = StyleSheet.create({
 		position: 'absolute',
 		top: 15,
 		right: 15,
+	},
+	// New styles for the tracking card
+	trackingCard: {
+		backgroundColor: '#00bcd4',
+		padding: 20,
+		borderRadius: 12,
+		marginBottom: 20,
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.1,
+		shadowRadius: 8,
+		elevation: 5,
+	},
+	trackingTitle: {
+		fontSize: 20,
+		fontWeight: 'bold',
+		color: '#fff',
+	},
+	trackingTime: {
+		fontSize: 24,
+		fontWeight: 'bold',
+		color: '#fff',
+	},
+	activityItem: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingVertical: 10,
+		borderBottomWidth: 1,
+		borderBottomColor: '#eee',
+	},
+	activityIcon: {
+		marginRight: 10,
+	},
+	activityText: {
+		fontSize: 18,
+		color: '#333',
+	},
+	bottomButton: {
+		position: 'absolute',
+		bottom: 0,
+		left: 0,
+		right: 0,
+		backgroundColor: '#4285f4',
+		paddingVertical: 15,
+		alignItems: 'center',
+	},
+	bottomButtonText: {
+		color: '#fff',
+		fontSize: 18,
+		fontWeight: '600',
 	},
 });
 

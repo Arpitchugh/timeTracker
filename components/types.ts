@@ -4,6 +4,8 @@ export interface Task {
 	id: string;
 	name: string;
 	selected: boolean;
+	color: string;
+	subTaskName: string;
 }
 
 export interface Project {
