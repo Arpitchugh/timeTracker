@@ -1,5 +1,3 @@
-// TimelineScreen.tsx
-
 import React, { useState, useEffect } from 'react';
 import {
 	View,
@@ -12,7 +10,7 @@ import {
 	TextInput,
 	FlatList,
 } from 'react-native';
-import TimeTracker from './TimeTracker';
+import TimeTracker from './TimeTracker'; 
 import ActivityList from './ActivityList';
 import TaskSelector from './TaskSelector';
 import { Project, Task, Activity } from '../types';
@@ -23,9 +21,11 @@ import {
 	loadProjects,
 	saveProjectsLocally,
 	addProject,
-} from '../dataHandler';
+	addTaskToProject,
+	updateTaskSelection,
+} from '../dataHandler'; 
 import NetInfo from '@react-native-community/netinfo';
-import { Ionicons } from '@expo/vector-icons'; // Ensure you have @expo/vector-icons installed
+import { Ionicons } from '@expo/vector-icons'; 
 
 const initialProject: Project = {
 	id: 'project-1',
@@ -47,6 +47,11 @@ const TimelineScreen: React.FC = () => {
 	const [isConnected, setIsConnected] = useState<boolean>(true);
 	const [isDrawerVisible, setIsDrawerVisible] = useState<boolean>(false);
 	const [newProjectName, setNewProjectName] = useState<string>('');
+
+	// **New States for Adding Tasks**
+	const [isAddTaskModalVisible, setIsAddTaskModalVisible] =
+		useState<boolean>(false);
+	const [newTaskName, setNewTaskName] = useState<string>('');
 
 	// Load projects and activities from local storage when the component mounts
 	useEffect(() => {
@@ -221,6 +226,65 @@ const TimelineScreen: React.FC = () => {
 		setIsDrawerVisible(false);
 	};
 
+	// **New Handler to Add a Task**
+	const handleAddTask = async () => {
+		if (!selectedProject) {
+			Alert.alert(
+				'No Project Selected',
+				'Please select a project to add tasks.'
+			);
+			return;
+		}
+
+		if (newTaskName.trim() === '') {
+			Alert.alert(
+				'Invalid Name',
+				'Task name cannot be empty.'
+			);
+			return;
+		}
+
+		// Check if task with same name exists within the project
+		const existingTask = selectedProject.tasks.find(
+			task =>
+				task.name.toLowerCase() ===
+				newTaskName.trim().toLowerCase()
+		);
+		if (existingTask) {
+			Alert.alert(
+				'Duplicate Task',
+				'A task with this name already exists in the selected project.'
+			);
+			return;
+		}
+
+		const newTask: Task = {
+			id: `task-${Date.now()}`,
+			name: newTaskName.trim(),
+			selected: false,
+		};
+
+		await addTaskToProject(selectedProject.id, newTask);
+		const updatedProjects = projects.map(proj =>
+			proj.id === selectedProject.id
+				? { ...proj, tasks: [...proj.tasks, newTask] }
+				: proj
+		);
+		setProjects(updatedProjects);
+		setSelectedProject(
+			updatedProjects.find(
+				proj => proj.id === selectedProject.id
+			) || null
+		);
+
+		setNewTaskName('');
+		setIsAddTaskModalVisible(false);
+		Alert.alert(
+			'Task Added',
+			`Task "${newTask.name}" has been added to project "${selectedProject.name}".`
+		);
+	};
+
 	return (
 		<View style={styles.container}>
 			{/* Add Project Button */}
@@ -267,6 +331,18 @@ const TimelineScreen: React.FC = () => {
 				<Text style={styles.sectionTitle}>Today</Text>
 				<ActivityList activities={activities} />
 			</ScrollView>
+
+			{/* Add Task Button at the Bottom */}
+			<TouchableOpacity
+				style={styles.addTaskButton}
+				onPress={() => setIsAddTaskModalVisible(true)}
+			>
+				<Ionicons
+					name='add-circle-outline'
+					size={120}
+					color='#28a745'
+				/>
+			</TouchableOpacity>
 
 			{/* Add Project Drawer (Modal) */}
 			<Modal
@@ -389,6 +465,68 @@ const TimelineScreen: React.FC = () => {
 					</View>
 				</View>
 			</Modal>
+
+			{/* Add Task Modal */}
+			<Modal
+				visible={isAddTaskModalVisible}
+				animationType='slide'
+				transparent={true}
+				onRequestClose={() =>
+					setIsAddTaskModalVisible(false)
+				}
+			>
+				<View style={styles.modalOverlay}>
+					<View style={styles.modalContainer}>
+						<Text style={styles.modalTitle}>
+							Add New Task
+						</Text>
+
+						{/* Input for New Task */}
+						<TextInput
+							style={styles.input}
+							placeholder='Task Name'
+							value={newTaskName}
+							onChangeText={
+								setNewTaskName
+							}
+						/>
+
+						{/* Save Task Button */}
+						<TouchableOpacity
+							style={
+								styles.saveButton
+							}
+							onPress={handleAddTask}
+						>
+							<Text
+								style={
+									styles.saveButtonText
+								}
+							>
+								Save
+							</Text>
+						</TouchableOpacity>
+
+						{/* Close Button */}
+						<TouchableOpacity
+							style={
+								styles.closeButton
+							}
+							onPress={() =>
+								setIsAddTaskModalVisible(
+									false
+								)
+							}
+						>
+							<Ionicons
+								name='close'
+								size={30}
+								color='#333'
+							/>
+						</TouchableOpacity>
+					</View>
+				</View>
+			</Modal>
 		</View>
 	);
 };
@@ -401,11 +539,17 @@ const styles = StyleSheet.create({
 	scrollContainer: {
 		paddingTop: 60,
 		paddingHorizontal: 20,
-		paddingBottom: 20,
+		paddingBottom: 100, // Extra padding to accommodate the add task button
 	},
 	addButton: {
 		position: 'absolute',
 		top: 20,
+		right: 20,
+		zIndex: 10,
+	},
+	addTaskButton: {
+		position: 'absolute',
+		bottom: 20,
 		right: 20,
 		zIndex: 10,
 	},
@@ -438,6 +582,7 @@ const styles = StyleSheet.create({
 		borderTopRightRadius: 12,
 		borderTopLeftRadius: 12,
 		maxHeight: '80%',
+		position: 'relative',
 	},
 	modalTitle: {
 		fontSize: 22,

@@ -1,8 +1,15 @@
 // TaskSelector.tsx
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+	View,
+	Text,
+	StyleSheet,
+	TouchableOpacity,
+	FlatList,
+} from 'react-native';
 import { Task } from '../types';
+import { Ionicons } from '@expo/vector-icons'; // Ensure you have @expo/vector-icons installed
 
 interface TaskSelectorProps {
 	tasks: Task[];
@@ -13,31 +20,45 @@ const TaskSelector: React.FC<TaskSelectorProps> = ({ tasks, onSelectTask }) => {
 	return (
 		<View style={styles.container}>
 			<Text style={styles.label}>Select Task:</Text>
-			<View style={styles.tasksContainer}>
-				{tasks.map(task => (
+			<FlatList
+				data={tasks}
+				keyExtractor={item => item.id}
+				horizontal
+				showsHorizontalScrollIndicator={false}
+				renderItem={({ item }) => (
 					<TouchableOpacity
-						key={task.id}
 						style={[
 							styles.taskButton,
-							task.selected &&
+							item.selected &&
 								styles.selectedTaskButton,
 						]}
 						onPress={() =>
-							onSelectTask(task.id)
+							onSelectTask(item.id)
 						}
 					>
 						<Text
 							style={[
 								styles.taskText,
-								task.selected &&
+								item.selected &&
 									styles.selectedTaskText,
 							]}
 						>
-							{task.name}
+							{item.name}
 						</Text>
+						{item.selected && (
+							<Ionicons
+								name='checkmark-circle'
+								size={20}
+								color='#fff'
+								style={
+									styles.checkIcon
+								}
+							/>
+						)}
 					</TouchableOpacity>
-				))}
-			</View>
+				)}
+				contentContainerStyle={styles.tasksContainer}
+			/>
 		</View>
 	);
 };
@@ -54,14 +75,18 @@ const styles = StyleSheet.create({
 	},
 	tasksContainer: {
 		flexDirection: 'row',
-		flexWrap: 'wrap',
+		flexWrap: 'nowrap',
 		gap: 10,
 	},
 	taskButton: {
+		flexDirection: 'row',
+		alignItems: 'center',
 		paddingVertical: 8,
 		paddingHorizontal: 15,
 		backgroundColor: '#e9ecef',
 		borderRadius: 20,
+		marginRight: 10,
+		position: 'relative',
 	},
 	selectedTaskButton: {
 		backgroundColor: '#28a745',
@@ -73,6 +98,9 @@ const styles = StyleSheet.create({
 	selectedTaskText: {
 		color: '#fff',
 		fontWeight: '600',
+	},
+	checkIcon: {
+		marginLeft: 5,
 	},
 });
 

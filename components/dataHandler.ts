@@ -1,7 +1,7 @@
 // dataHandler.ts
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Activity, Project } from './types';
+import { Activity, Project, Task } from './types';
 
 // Storage keys
 const ACTIVITIES_STORAGE_KEY = 'USER_ACTIVITIES';
@@ -151,5 +151,51 @@ export const addProject = async (newProject: Project): Promise<void> => {
 		await saveProjectsLocally(projects);
 	} catch (error) {
 		console.error('Error adding new project:', error);
+	}
+};
+
+// Add a new task to a project
+export const addTaskToProject = async (
+	projectId: string,
+	newTask: Task
+): Promise<void> => {
+	try {
+		const projects = await loadProjects();
+		const updatedProjects = projects.map(project => {
+			if (project.id === projectId) {
+				return {
+					...project,
+					tasks: [...project.tasks, newTask],
+				};
+			}
+			return project;
+		});
+		await saveProjectsLocally(updatedProjects);
+	} catch (error) {
+		console.error('Error adding task to project:', error);
+	}
+};
+
+// Update a task's selected status within a project
+export const updateTaskSelection = async (
+	projectId: string,
+	taskId: string
+): Promise<void> => {
+	try {
+		const projects = await loadProjects();
+		const updatedProjects = projects.map(project => {
+			if (project.id === projectId) {
+				const updatedTasks = project.tasks.map(task =>
+					task.id === taskId
+						? { ...task, selected: true }
+						: { ...task, selected: false }
+				);
+				return { ...project, tasks: updatedTasks };
+			}
+			return project;
+		});
+		await saveProjectsLocally(updatedProjects);
+	} catch (error) {
+		console.error('Error updating task selection:', error);
 	}
 };

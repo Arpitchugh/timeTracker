@@ -1,12 +1,10 @@
-// TimeTracker.tsx
-
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { Task } from '../types';
 
 interface TimeTrackerProps {
 	currentTask: Task | null;
-	onStop: (taskId: string, elapsedTime: string) => void;
+	onStop: (taskId: string, elapsedTime: string) => Promise<void>;
 }
 
 const TimeTracker: React.FC<TimeTrackerProps> = ({ currentTask, onStop }) => {
@@ -39,9 +37,9 @@ const TimeTracker: React.FC<TimeTrackerProps> = ({ currentTask, onStop }) => {
 		setIsRunning(true);
 	};
 
-	const handleStop = () => {
+	const handleStop = async () => {
 		setIsRunning(false);
-		onStop(currentTask!.id, formatTime(elapsedTime));
+		await onStop(currentTask!.id, formatTime(elapsedTime));
 		setElapsedTime(0);
 	};
 
