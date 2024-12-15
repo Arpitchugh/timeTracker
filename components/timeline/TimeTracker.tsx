@@ -56,6 +56,19 @@ const TimeTracker: React.FC<TimeTrackerProps> = ({ currentTask, onStop }) => {
 		return `${hh}:${mm}:${ss}`;
 	};
 
+	// Determine what to display in the "middle row"
+	let subtaskDisplay;
+	if (
+		currentTask &&
+		currentTask.subtasks &&
+		currentTask.subtasks.length > 0
+	) {
+		// Display the first subtask's name for illustration
+		subtaskDisplay = currentTask.subtasks[0].name;
+	} else {
+		subtaskDisplay = 'No subtasks';
+	}
+
 	return (
 		<View
 			style={[
@@ -117,7 +130,7 @@ const TimeTracker: React.FC<TimeTrackerProps> = ({ currentTask, onStop }) => {
 						</View>
 					</View>
 
-					{/* Middle row: Bullet point and subtask (example: "Landing page") */}
+					{/* Middle row: Bullet point and subtask */}
 					<View style={styles.middleRow}>
 						<View style={styles.bulletRow}>
 							<View
@@ -130,8 +143,7 @@ const TimeTracker: React.FC<TimeTrackerProps> = ({ currentTask, onStop }) => {
 									styles.subTaskName
 								}
 							>
-								{currentTask.subTaskName ??
-									'Landing page'}
+								{subtaskDisplay}
 							</Text>
 						</View>
 
@@ -175,7 +187,6 @@ const styles = StyleSheet.create({
 		borderRadius: 8,
 		padding: 15,
 		marginBottom: 20,
-		// Optional shadow for iOS / elevation for Android
 		shadowColor: '#000',
 		shadowOffset: { width: 0, height: 2 },
 		shadowOpacity: 0.1,

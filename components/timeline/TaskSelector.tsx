@@ -9,14 +9,19 @@ import {
 	FlatList,
 } from 'react-native';
 import { Task } from '../types';
-import { Ionicons } from '@expo/vector-icons'; // Ensure you have @expo/vector-icons installed
+import { Ionicons } from '@expo/vector-icons';
 
 interface TaskSelectorProps {
 	tasks: Task[];
 	onSelectTask: (taskId: string) => void;
+	currentTask: Task | null;
 }
 
-const TaskSelector: React.FC<TaskSelectorProps> = ({ tasks, onSelectTask }) => {
+const TaskSelector: React.FC<TaskSelectorProps> = ({
+	tasks,
+	onSelectTask,
+	currentTask,
+}) => {
 	return (
 		<View style={styles.container}>
 			<Text style={styles.label}>Select Task:</Text>
@@ -25,38 +30,46 @@ const TaskSelector: React.FC<TaskSelectorProps> = ({ tasks, onSelectTask }) => {
 				keyExtractor={item => item.id}
 				horizontal
 				showsHorizontalScrollIndicator={false}
-				renderItem={({ item }) => (
-					<TouchableOpacity
-						style={[
-							styles.taskButton,
-							item.selected &&
-								styles.selectedTaskButton,
-						]}
-						onPress={() =>
-							onSelectTask(item.id)
-						}
-					>
-						<Text
+				renderItem={({ item }) => {
+					const isSelected =
+						currentTask?.id === item.id;
+					return (
+						<TouchableOpacity
 							style={[
-								styles.taskText,
-								item.selected &&
-									styles.selectedTaskText,
+								styles.taskButton,
+								isSelected &&
+									styles.selectedTaskButton,
 							]}
+							onPress={() =>
+								onSelectTask(
+									item.id
+								)
+							}
 						>
-							{item.name}
-						</Text>
-						{item.selected && (
-							<Ionicons
-								name='checkmark-circle'
-								size={20}
-								color='#fff'
-								style={
-									styles.checkIcon
-								}
-							/>
-						)}
-					</TouchableOpacity>
-				)}
+							<Text
+								style={[
+									styles.taskText,
+									isSelected &&
+										styles.selectedTaskText,
+								]}
+							>
+								{item.name}
+							</Text>
+							{isSelected && (
+								<Ionicons
+									name='checkmark-circle'
+									size={
+										20
+									}
+									color='#fff'
+									style={
+										styles.checkIcon
+									}
+								/>
+							)}
+						</TouchableOpacity>
+					);
+				}}
 				contentContainerStyle={styles.tasksContainer}
 			/>
 		</View>

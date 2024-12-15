@@ -10,7 +10,7 @@ import {
 	TextInput,
 	FlatList,
 } from 'react-native';
-import TimeTracker from './TimeTracker'; 
+import TimeTracker from './TimeTracker';
 import ActivityList from './ActivityList';
 import TaskSelector from './TaskSelector';
 import { Project, Task, Activity } from '../types';
@@ -22,26 +22,40 @@ import {
 	saveProjectsLocally,
 	addProject,
 	addTaskToProject,
-	updateTaskSelection,
-} from '../dataHandler'; 
+} from '../dataHandler';
 import NetInfo from '@react-native-community/netinfo';
-import { Ionicons } from '@expo/vector-icons'; 
+import { Ionicons } from '@expo/vector-icons';
 
+// Define an initial project with the new structure requirements
 const initialProject: Project = {
 	id: 'project-1',
 	name: 'ui/ux',
+	description: 'Initial project for UI/UX tasks.',
+	color: '#3CA6A6',
+	totalTime: 0,
+	dateCreated: new Date(),
+	dateModified: new Date(),
 	tasks: [
 		{
-			id: 'task-1', name: 'Landing Page', selected: true,
-			color: '',
-			subTaskName: ''
+			id: 'task-1',
+			name: 'Landing Page',
+			description: 'Create a landing page',
+			color: '#000',
+			totalTime: 0,
+			dateCreated: new Date(),
+			dateModified: new Date(),
+			subtasks: [],
 		},
 		{
-			id: 'task-2', name: 'User Flow', selected: false,
-			color: '',
-			subTaskName: ''
+			id: 'task-2',
+			name: 'User Flow',
+			description: 'Define the user flow',
+			color: '#000',
+			totalTime: 0,
+			dateCreated: new Date(),
+			dateModified: new Date(),
+			subtasks: [],
 		},
-		// Add more tasks as needed
 	],
 };
 
@@ -56,7 +70,7 @@ const TimelineScreen: React.FC = () => {
 	const [isDrawerVisible, setIsDrawerVisible] = useState<boolean>(false);
 	const [newProjectName, setNewProjectName] = useState<string>('');
 
-	// **New States for Adding Tasks**
+	// New States for Adding Tasks
 	const [isAddTaskModalVisible, setIsAddTaskModalVisible] =
 		useState<boolean>(false);
 	const [newTaskName, setNewTaskName] = useState<string>('');
@@ -70,9 +84,20 @@ const TimelineScreen: React.FC = () => {
 				await addProject(initialProject);
 				setProjects([initialProject]);
 				setSelectedProject(initialProject);
+				setCurrentTask(
+					initialProject.tasks.length > 0
+						? initialProject.tasks[0]
+						: null
+				);
 			} else {
 				setProjects(storedProjects);
 				setSelectedProject(storedProjects[0]);
+				// Optionally set the current task to the first task of the first project
+				if (storedProjects[0].tasks.length > 0) {
+					setCurrentTask(
+						storedProjects[0].tasks[0]
+					);
+				}
 			}
 
 			const storedActivities = await loadActivities();
@@ -95,7 +120,7 @@ const TimelineScreen: React.FC = () => {
 	// Sync activities to backend when the network becomes available or activities change
 	useEffect(() => {
 		const synchronize = async () => {
-			if (isConnected) {
+			if (isConnected && activities.length > 0) {
 				await syncActivities(activities);
 				Alert.alert(
 					'Sync Complete',
@@ -157,26 +182,11 @@ const TimelineScreen: React.FC = () => {
 
 	const handleSelectTask = (taskId: string) => {
 		if (!selectedProject) return;
-
-		const updatedTasks = selectedProject.tasks.map(task =>
-			task.id === taskId
-				? { ...task, selected: true }
-				: { ...task, selected: false }
-		);
-		const selected =
-			updatedTasks.find(task => task.selected) || null;
-		setCurrentTask(selected);
-
-		// Update the selected project in state and storage
-		const updatedProject: Project = {
-			...selectedProject,
-			tasks: updatedTasks,
-		};
-		const updatedProjects = projects.map(proj =>
-			proj.id === updatedProject.id ? updatedProject : proj
-		);
-		setProjects(updatedProjects);
-		saveProjectsLocally(updatedProjects);
+		const foundTask =
+			selectedProject.tasks.find(
+				task => task.id === taskId
+			) || null;
+		setCurrentTask(foundTask);
 	};
 
 	// Handler to add a new project
@@ -206,13 +216,19 @@ const TimelineScreen: React.FC = () => {
 		const newProject: Project = {
 			id: `project-${Date.now()}`,
 			name: newProjectName.trim(),
-			tasks: [], // Initialize with empty tasks or provide a way to add tasks
+			description: '',
+			color: '#3CA6A6',
+			totalTime: 0,
+			dateCreated: new Date(),
+			dateModified: new Date(),
+			tasks: [],
 		};
 
 		await addProject(newProject);
 		const updatedProjects = [...projects, newProject];
 		setProjects(updatedProjects);
 		setSelectedProject(newProject);
+		setCurrentTask(null); // No tasks yet
 		saveProjectsLocally(updatedProjects);
 
 		setNewProjectName('');
@@ -226,15 +242,14 @@ const TimelineScreen: React.FC = () => {
 	// Handler to select a project from the list
 	const handleSelectProject = (project: Project) => {
 		setSelectedProject(project);
-
-		// Update currentTask based on the new selected project
-		const selectedTask =
-			project.tasks.find(task => task.selected) || null;
-		setCurrentTask(selectedTask);
+		// Select the first task if available
+		const firstTask =
+			project.tasks.length > 0 ? project.tasks[0] : null;
+		setCurrentTask(firstTask);
 		setIsDrawerVisible(false);
 	};
 
-	// **New Handler to Add a Task**
+	// Handler to add a new task to the selected project
 	const handleAddTask = async () => {
 		if (!selectedProject) {
 			Alert.alert(
@@ -269,23 +284,30 @@ const TimelineScreen: React.FC = () => {
 		const newTask: Task = {
 			id: `task-${Date.now()}`,
 			name: newTaskName.trim(),
-			selected: false,
+			description: '',
 			color: '#000',
-			subTaskName: '',
+			totalTime: 0,
+			dateCreated: new Date(),
+			dateModified: new Date(),
+			subtasks: [],
 		};
 
 		await addTaskToProject(selectedProject.id, newTask);
 		const updatedProjects = projects.map(proj =>
 			proj.id === selectedProject.id
-				? { ...proj, tasks: [...proj.tasks, newTask] }
+				? {
+						...proj,
+						tasks: [...proj.tasks, newTask],
+						dateModified: new Date(),
+				  }
 				: proj
 		);
 		setProjects(updatedProjects);
-		setSelectedProject(
+		const updatedProject =
 			updatedProjects.find(
 				proj => proj.id === selectedProject.id
-			) || null
-		);
+			) || null;
+		setSelectedProject(updatedProject);
 
 		setNewTaskName('');
 		setIsAddTaskModalVisible(false);
@@ -323,6 +345,7 @@ const TimelineScreen: React.FC = () => {
 					<TaskSelector
 						tasks={selectedProject.tasks}
 						onSelectTask={handleSelectTask}
+						currentTask={currentTask}
 					/>
 				)}
 
@@ -659,7 +682,6 @@ const styles = StyleSheet.create({
 		top: 15,
 		right: 15,
 	},
-	// New styles for the tracking card
 	trackingCard: {
 		backgroundColor: '#00bcd4',
 		padding: 20,
