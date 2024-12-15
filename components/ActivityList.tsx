@@ -1,33 +1,101 @@
-import React from 'react';
-import { View } from 'react-native';
-import { ActivityItem } from './ActivityItem';
+// ActivityList.tsx
 
-export function ActivityList() {
-  return (
-    <View>
-      <ActivityItem
-        title="Reading books"
-        subtitle="Walter Isaacson - Steve Jobs"
-        duration="02:24:50"
-        color="#FF4B6E"
-        completed
-      />
-      <ActivityItem
-        title="Work - office"
-        duration="06:14:24"
-        color="#7B61FF"
-      />
-      <ActivityItem
-        title="Work"
-        subtitle="Daily meeting"
-        duration="00:58:49"
-        color="#7B61FF"
-      />
-      <ActivityItem
-        title="Health"
-        duration="00:38:22"
-        color="#FFA726"
-      />
-    </View>
-  );
+import React from 'react';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
+
+interface Activity {
+	id: string;
+	taskId: string;
+	taskName: string;
+	timeSpent: string;
+	date: Date;
 }
+
+interface ActivityListProps {
+	activities: Activity[];
+}
+
+const ActivityList: React.FC<ActivityListProps> = ({ activities }) => {
+	const renderItem = ({ item }: { item: Activity }) => (
+		<View style={styles.activityItem}>
+			<View style={styles.activityHeader}>
+				<Text style={styles.activityTaskName}>
+					{item.taskName}
+				</Text>
+				<Text style={styles.activityTime}>
+					{item.timeSpent}
+				</Text>
+			</View>
+			<Text style={styles.activityDate}>
+				{item.date.toLocaleDateString()} at{' '}
+				{item.date.toLocaleTimeString([], {
+					hour: '2-digit',
+					minute: '2-digit',
+				})}
+			</Text>
+		</View>
+	);
+
+	return (
+		<View style={styles.listContainer}>
+			{activities.length === 0 ? (
+				<Text style={styles.emptyMessage}>
+					No activities tracked yet today.
+				</Text>
+			) : (
+				<FlatList
+					data={activities}
+					keyExtractor={item => item.id}
+					renderItem={renderItem}
+					ItemSeparatorComponent={() => (
+						<View
+							style={styles.separator}
+						/>
+					)}
+				/>
+			)}
+		</View>
+	);
+};
+
+const styles = StyleSheet.create({
+	listContainer: {
+		paddingVertical: 10,
+	},
+	activityItem: {
+		backgroundColor: '#f1f3f5',
+		padding: 15,
+		borderRadius: 8,
+	},
+	activityHeader: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		marginBottom: 5,
+	},
+	activityTaskName: {
+		fontSize: 18,
+		fontWeight: '600',
+		color: '#333',
+	},
+	activityTime: {
+		fontSize: 16,
+		color: '#28a745',
+		fontWeight: '500',
+	},
+	activityDate: {
+		fontSize: 14,
+		color: '#666',
+	},
+	emptyMessage: {
+		fontSize: 16,
+		color: '#666',
+		fontStyle: 'italic',
+		textAlign: 'center',
+		marginTop: 20,
+	},
+	separator: {
+		height: 10,
+	},
+});
+
+export default ActivityList;
