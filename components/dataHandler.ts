@@ -1,9 +1,13 @@
 // dataHandler.ts
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Activity } from './types';
+import { Activity, Project } from './types';
 
+// Storage keys
 const ACTIVITIES_STORAGE_KEY = 'USER_ACTIVITIES';
+const PROJECTS_STORAGE_KEY = 'USER_PROJECTS';
+
+// -------------------- Activities Handling --------------------
 
 // Save a single activity to local storage
 export const saveActivityLocally = async (
@@ -32,7 +36,6 @@ export const loadActivities = async (): Promise<Activity[]> => {
 		const storedActivities = await AsyncStorage.getItem(
 			ACTIVITIES_STORAGE_KEY
 		);
-		// Convert date strings back to Date objects
 		if (storedActivities) {
 			const parsedActivities: Activity[] = JSON.parse(
 				storedActivities
@@ -108,5 +111,45 @@ export const syncActivities = async (activities: Activity[]): Promise<void> => {
 		);
 	} catch (error) {
 		console.error('Error updating activities after sync:', error);
+	}
+};
+
+// -------------------- Projects Handling --------------------
+
+// Save projects to local storage
+export const saveProjectsLocally = async (
+	projects: Project[]
+): Promise<void> => {
+	try {
+		await AsyncStorage.setItem(
+			PROJECTS_STORAGE_KEY,
+			JSON.stringify(projects)
+		);
+	} catch (error) {
+		console.error('Error saving projects locally:', error);
+	}
+};
+
+// Load projects from local storage
+export const loadProjects = async (): Promise<Project[]> => {
+	try {
+		const storedProjects = await AsyncStorage.getItem(
+			PROJECTS_STORAGE_KEY
+		);
+		return storedProjects ? JSON.parse(storedProjects) : [];
+	} catch (error) {
+		console.error('Error loading projects:', error);
+		return [];
+	}
+};
+
+// Add a new project
+export const addProject = async (newProject: Project): Promise<void> => {
+	try {
+		const projects = await loadProjects();
+		projects.push(newProject);
+		await saveProjectsLocally(projects);
+	} catch (error) {
+		console.error('Error adding new project:', error);
 	}
 };

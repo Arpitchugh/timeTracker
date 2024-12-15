@@ -2,12 +2,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-
-interface Task {
-	id: string;
-	name: string;
-	selected: boolean;
-}
+import { Task } from '../types';
 
 interface TaskSelectorProps {
 	tasks: Task[];

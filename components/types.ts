@@ -14,9 +14,10 @@ export interface Project {
 
 export interface Activity {
 	id: string;
+	projectId: string;
 	taskId: string;
 	taskName: string;
 	timeSpent: string;
 	date: Date;
-	isSynced: boolean; // Indicates if the activity has been sent to the backend
+	isSynced: boolean;
 }
